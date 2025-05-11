@@ -8,6 +8,8 @@
 
 class UCameraComponent;
 class USpringArmComponent;
+class ULMAHealthComponent;
+class UAnimMontage;
 
 UCLASS()
 class LEAVEMEALONE_API ALMADefaultCharacter : public ACharacter
@@ -18,6 +20,27 @@ public:
 	// Sets default values for this character's properties
 	ALMADefaultCharacter();
 
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
+
+	// Called to bind functionality to input
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	UFUNCTION()
+	ULMAHealthComponent* GetHealthComponent() const { return HealthComponent; }
+
+	UFUNCTION(BlueprintCallable, Category = "Character")
+	float GetStamina() const { return Stamina; };
+
+	UFUNCTION(BlueprintCallable, Category = "Character")
+	float GetSprinting() const { return IsSprinting; };
+
+	//UFUNCTION(BlueprintImplementableEvent, Category = "Character")
+	//void OnHealthChanged(float NewHealth);
+
+	//UFUNCTION(BlueprintNativeEvent, Category = "Character")
+	//void OnDeath();
+
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
 	USpringArmComponent* SpringArmComponent;
@@ -25,8 +48,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
 	UCameraComponent* CameraComponent;
 
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components|Health")
+	ULMAHealthComponent* HealthComponent;
 
 	UPROPERTY()
 	UDecalComponent* CurrentCursor = nullptr;
@@ -37,12 +60,24 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cursor")
 	FVector CursorSize = FVector(20.0f, 40.0f, 40.0f);
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	UPROPERTY(EditDefaultsOnly, Category = "Animation")
+	UAnimMontage* DeathMontage;
 
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	UPROPERTY(EditDefaultsOnly, Category = "Components|Stamina")
+	float SprintSpeedMultiplier = 2.0f;
+	UPROPERTY(EditDefaultsOnly, Category = "Components|Stamina")
+	float MaxStamina = 100.0f;
+	UPROPERTY(EditDefaultsOnly, Category = "Components|Stamina")
+	float StaminaDrainRate = 50.0f;
+	UPROPERTY(EditDefaultsOnly, Category = "Components|Stamina")
+	float StaminaRecoveryRate = 10.0f;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components|Stamina")
+	bool IsSprinting = false;
+
+
+
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
 
 private:
 	float YRotation = -75.0f;
@@ -61,4 +96,16 @@ private:
 	void MoveRight(float Value);
 	void Zoom(float Value);
 
+	void OnDeath();
+
+	void OnHealthChanged(float NewHealth);
+
+	float DefaultWalkSpeed;
+	float Stamina = 0.0f;
+	bool CanSprint = true;
+	void StartSprinting();
+	void StopSprinting();
+	void StaminaManager();
+
+	void RotationPlayerOnCursor();
 };

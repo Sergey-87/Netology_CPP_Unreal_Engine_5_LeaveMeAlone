@@ -8,7 +8,10 @@
 #include "Components/InputComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
-
+#include "Components/LMAHealthComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Engine/Engine.h"
+#include "Components/LMAStaminaComponent.h"
 
 // Sets default values
 ALMADefaultCharacter::ALMADefaultCharacter()
@@ -29,6 +32,8 @@ ALMADefaultCharacter::ALMADefaultCharacter()
 	CameraComponent->SetFieldOfView(FOV);
 	CameraComponent->bUsePawnControlRotation = false;
 
+	HealthComponent = CreateDefaultSubobject<ULMAHealthComponent>("HealthComponent");
+
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
 	bUseControllerRotationRoll = false;
@@ -41,10 +46,21 @@ void ALMADefaultCharacter::BeginPlay()
 
 	SpringArmComponent->TargetArmLength = ArmLength;
 
+	Stamina = MaxStamina;
+
 	if (CursorMaterial)
 	{
 		CurrentCursor = UGameplayStatics::SpawnDecalAtLocation(GetWorld(), CursorMaterial, CursorSize, FVector(0));
 	}
+
+	OnHealthChanged(HealthComponent->GetHealth());
+	HealthComponent->OnDeath.AddUObject(this, &ALMADefaultCharacter::OnDeath);
+	HealthComponent->OnHealthChanged.AddUObject(this, &ALMADefaultCharacter::OnHealthChanged);
+	//HealthComponent->OnDeath.AddDynamic(this, &ALMADefaultCharacter::OnDeath);
+	//HealthComponent->OnHealthChanged.AddDynamic(this, &ALMADefaultCharacter::OnHealthChanged);
+
+
+	DefaultWalkSpeed = GetCharacterMovement()->MaxWalkSpeed;
 	
 }
 
@@ -52,6 +68,29 @@ void ALMADefaultCharacter::BeginPlay()
 void ALMADefaultCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (!(HealthComponent->IsDead()))
+	{
+		RotationPlayerOnCursor();
+		StaminaManager();
+	}
+}
+
+// Called to bind functionality to input
+void ALMADefaultCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+{
+	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+	PlayerInputComponent->BindAxis("MoveForward", this, &ALMADefaultCharacter::MoveForward);
+	PlayerInputComponent->BindAxis("MoveRight", this, &ALMADefaultCharacter::MoveRight);
+	PlayerInputComponent->BindAxis("Zoom", this, &ALMADefaultCharacter::Zoom);
+
+	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &ALMADefaultCharacter::StartSprinting);
+	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &ALMADefaultCharacter::StopSprinting);
+}
+
+void ALMADefaultCharacter::RotationPlayerOnCursor()
+{
 	APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 	if (PC)
 	{
@@ -64,17 +103,6 @@ void ALMADefaultCharacter::Tick(float DeltaTime)
 			CurrentCursor->SetWorldLocation(ResultHit.Location);
 		}
 	}
-
-}
-
-// Called to bind functionality to input
-void ALMADefaultCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
-	PlayerInputComponent->BindAxis("MoveForward", this, &ALMADefaultCharacter::MoveForward);
-	PlayerInputComponent->BindAxis("MoveRight", this, &ALMADefaultCharacter::MoveRight);
-	PlayerInputComponent->BindAxis("Zoom", this, &ALMADefaultCharacter::Zoom);
 }
 
 void ALMADefaultCharacter::MoveForward(float Value)
@@ -87,6 +115,46 @@ void ALMADefaultCharacter::MoveRight(float Value)
 	AddMovementInput(GetActorRightVector(), Value);
 }
 
+void ALMADefaultCharacter::StaminaManager()
+{
+	bool IsMoving = GetVelocity().Size() > 0.0f;
+	if (IsSprinting && IsMoving)
+	{
+		Stamina -= StaminaDrainRate * GetWorld()->GetDeltaSeconds();
+		if (Stamina <= 0.0f)
+		{
+			Stamina = 0.0f;
+			StopSprinting();
+		}
+	}
+	else if (Stamina < MaxStamina)
+	{
+		Stamina += StaminaRecoveryRate * GetWorld()->GetDeltaSeconds();
+		if (Stamina > MaxStamina)
+		{
+			Stamina = MaxStamina;
+		}
+	}
+	CanSprint = Stamina > 0.0f && GetVelocity().Size() > 0.0f;
+	GEngine->AddOnScreenDebugMessage(1, 2.0f, FColor::Blue, FString::Printf(TEXT("Stamina = %f"), Stamina));
+}
+
+void ALMADefaultCharacter::StartSprinting()
+{
+	if (CanSprint && Stamina > ((int)MaxStamina % 10))
+	{
+		IsSprinting = true;
+		GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SprintSpeedMultiplier;
+	}
+}
+
+void ALMADefaultCharacter::StopSprinting()
+{
+	IsSprinting = false;
+	GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed;
+}
+
+
 void ALMADefaultCharacter::Zoom(float Value)
 {
 	if (Value != 0.0f)
@@ -95,4 +163,28 @@ void ALMADefaultCharacter::Zoom(float Value)
 		SpringArmComponent->TargetArmLength = ArmLength;
 	}
 }
+
+void ALMADefaultCharacter::OnDeath()
+{
+	CurrentCursor->DestroyRenderState_Concurrent();
+	PlayAnimMontage(DeathMontage);
+	GetCharacterMovement()->DisableMovement();
+	SetLifeSpan(5.0f);
+	if (Controller)
+	{
+		Controller->ChangeState(NAME_Spectating);
+	}
+}
+
+void ALMADefaultCharacter::OnHealthChanged(float NewHealth)
+{
+	GEngine->AddOnScreenDebugMessage(0, 2.0f, FColor::Red, FString::Printf(TEXT("Health = %f"), NewHealth));
+}
+
+
+
+
+
+
+
 
