@@ -12,6 +12,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Engine/Engine.h"
 #include "Components/LMAStaminaComponent.h"
+#include "Components/LMAWeaponComponent.h"
 
 // Sets default values
 ALMADefaultCharacter::ALMADefaultCharacter()
@@ -33,6 +34,8 @@ ALMADefaultCharacter::ALMADefaultCharacter()
 	CameraComponent->bUsePawnControlRotation = false;
 
 	HealthComponent = CreateDefaultSubobject<ULMAHealthComponent>("HealthComponent");
+
+	WeaponComponent = CreateDefaultSubobject<ULMAWeaponComponent>("Weapon");
 
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
@@ -56,9 +59,6 @@ void ALMADefaultCharacter::BeginPlay()
 	OnHealthChanged(HealthComponent->GetHealth());
 	HealthComponent->OnDeath.AddUObject(this, &ALMADefaultCharacter::OnDeath);
 	HealthComponent->OnHealthChanged.AddUObject(this, &ALMADefaultCharacter::OnHealthChanged);
-	//HealthComponent->OnDeath.AddDynamic(this, &ALMADefaultCharacter::OnDeath);
-	//HealthComponent->OnHealthChanged.AddDynamic(this, &ALMADefaultCharacter::OnHealthChanged);
-
 
 	DefaultWalkSpeed = GetCharacterMovement()->MaxWalkSpeed;
 	
@@ -87,6 +87,11 @@ void ALMADefaultCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 
 	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &ALMADefaultCharacter::StartSprinting);
 	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &ALMADefaultCharacter::StopSprinting);
+
+	PlayerInputComponent->BindAction("Fire", IE_Pressed, WeaponComponent, &ULMAWeaponComponent::StartFire);
+	PlayerInputComponent->BindAction("Fire", IE_Released, WeaponComponent, &ULMAWeaponComponent::StopFire);
+
+	PlayerInputComponent->BindAction("Reload", IE_Pressed, WeaponComponent, &ULMAWeaponComponent::Reload);
 }
 
 void ALMADefaultCharacter::RotationPlayerOnCursor()

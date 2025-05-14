@@ -62,13 +62,6 @@ bool ULMAHealthComponent::AddHealth(float NewHealth)
 	return true;
 }
 
-// Called every frame
-//void ULMAHealthComponent::Tick(float DeltaTime)
-//{
-	//Super::Tick(DeltaTime);
-
-//}
-
 
 
 

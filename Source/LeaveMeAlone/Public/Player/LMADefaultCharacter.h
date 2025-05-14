@@ -9,6 +9,7 @@
 class UCameraComponent;
 class USpringArmComponent;
 class ULMAHealthComponent;
+class ULMAWeaponComponent;
 class UAnimMontage;
 
 UCLASS()
@@ -35,18 +36,15 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Character")
 	float GetSprinting() const { return IsSprinting; };
 
-	//UFUNCTION(BlueprintImplementableEvent, Category = "Character")
-	//void OnHealthChanged(float NewHealth);
-
-	//UFUNCTION(BlueprintNativeEvent, Category = "Character")
-	//void OnDeath();
-
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
 	USpringArmComponent* SpringArmComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
 	UCameraComponent* CameraComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components|Weapon")
+	ULMAWeaponComponent* WeaponComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components|Health")
 	ULMAHealthComponent* HealthComponent;
