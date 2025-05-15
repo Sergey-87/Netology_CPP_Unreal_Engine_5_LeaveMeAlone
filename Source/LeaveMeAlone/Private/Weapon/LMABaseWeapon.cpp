@@ -48,8 +48,8 @@ void ALMABaseWeapon::Shoot()
 		DrawDebugSphere(GetWorld(), HitResult.ImpactPoint, 5.0f, 24, FColor::Red, false, 1.0f);
 	}
 	DecrementBullets();
-	GEngine->AddOnScreenDebugMessage(
-		2, 2.0f, FColor::Green, FString::Printf(TEXT("Bullets = %s"), *FString::FromInt(CurrentAmmoWeapon.Bullets)));
+	//GEngine->AddOnScreenDebugMessage(
+		//2, 2.0f, FColor::Green, FString::Printf(TEXT("Bullets = %s"), *FString::FromInt(CurrentAmmoWeapon.Bullets)));
 }
 
 void ALMABaseWeapon::Fire()
