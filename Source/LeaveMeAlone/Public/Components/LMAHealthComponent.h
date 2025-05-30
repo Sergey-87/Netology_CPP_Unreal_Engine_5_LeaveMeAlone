@@ -6,8 +6,8 @@
 #include "Components/ActorComponent.h"
 #include "LMAHealthComponent.generated.h"
 
-DECLARE_MULTICAST_DELEGATE(FOnDeath)
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnHealthChanged, float);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDeath);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHealthChanged, float, NewHealth);
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class LEAVEMEALONE_API ULMAHealthComponent : public UActorComponent
@@ -18,14 +18,18 @@ public:
 	// Sets default values for this actor's properties
 	ULMAHealthComponent();
 	UFUNCTION(BlueprintCallable)
-	float GetHealth() const { return Health; }
+	float GetHealth() const; // { return Health; }
 
 	UFUNCTION(BlueprintCallable)
 	bool IsDead() const;
 
 	bool AddHealth(float NewHealth);
 	bool IsHealthFull() const;
+
+	UPROPERTY(BlueprintAssignable)
 	FOnDeath OnDeath;
+
+	UPROPERTY(BlueprintAssignable)
 	FOnHealthChanged OnHealthChanged;
 
 protected:

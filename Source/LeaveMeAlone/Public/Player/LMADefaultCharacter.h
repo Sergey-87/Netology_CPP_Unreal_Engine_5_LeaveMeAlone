@@ -36,6 +36,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Character")
 	float GetSprinting() const { return IsSprinting; };
 
+	UFUNCTION(BlueprintImplementableEvent, Category = "Character")
+	void OnHealthChanged(float NewHealth);
+
+	UFUNCTION(BlueprintNativeEvent, Category = "Character")
+	void OnDeath();
+
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
 	USpringArmComponent* SpringArmComponent;
@@ -94,9 +100,9 @@ private:
 	void MoveRight(float Value);
 	void Zoom(float Value);
 
-	void OnDeath();
+	//void OnDeath();
 
-	void OnHealthChanged(float NewHealth);
+	//void OnHealthChanged(float NewHealth);
 
 	float DefaultWalkSpeed;
 	float Stamina = 0.0f;
